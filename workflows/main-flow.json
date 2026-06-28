@@ -1,5 +1,5 @@
 {
-  "name": "gpn",
+  "name": "gpnv2",
   "nodes": [
     {
       "parameters": {
@@ -8,19 +8,108 @@
         ],
         "additionalFields": {}
       },
+      "id": "f874e58f-0f71-440f-af9a-45b8d41cbdf3",
+      "name": "Telegram Trigger",
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.2,
       "position": [
-        -64,
-        -16
+        -304,
+        -48
       ],
-      "name": "Telegram Trigger",
-      "id": "db1f04cf-d315-4493-8a9a-39db91aa8295",
-      "webhookId": "1df44948-568c-43fb-a7fa-43816800c90e",
+      "webhookId": "c248300a-e365-4f44-a281-9d8a7f75def5",
       "credentials": {
         "telegramApi": {
           "id": "L1G74PeYn1AFHy55",
           "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message.text }}",
+        "options": {
+          "systemMessage": "=# ROL\nEres el recepcionista virtual de una clínica médica en Telegram. Tu objetivo es ayudar al usuario a consultar turnos disponibles y registrar su elección de forma amable y eficiente.\n\n# REGLAS CRÍTICAS DE OPERACIÓN\n1. SIEMPRE que el usuario salude, inicie la conversación, o pida ver los turnos disponibles, debes usar OBLIGATORIAMENTE la herramienta `consultar_turnos_disponibles`. Nunca asumas qué turnos hay libres sin consultar la herramienta primero.\n2. La herramienta te devolverá los turnos en formato JSON o tabla. Tu trabajo es formatear esa información de manera clara, prolija y legible para el usuario de Telegram.\n3. NO inventes días, NO inventes horarios y NO agregues notas de automatización o técnicas al final del mensaje.\n\n# FLUJO DE TRABAJO (PASOS)\n\n- PASO 1 (Consulta): Cuando obtengas los turnos de la herramienta, muéstralos ordenados por día. Pide explícitamente al usuario que elija un día y horario de la lista.\n  * Formato de salida requerido para los turnos:\n    ¡Hola! 👋 Bienvenido a nuestro sistema de turnos médicos. Aquí tienes los horarios disponibles para los próximos días:\n    📅 *[Nombre del Día]*\n    🔹 [Hora 1] | [Hora 2] | [Hora 3]\n    Por favor, dime qué día y horario prefieres para proceder con tu reserva.\n\n- PASO 2 (Validación y Registro): Cuando el usuario te responda con el turno que desea, revisa en tu memoria histórica los turnos que le mostraste en el PASO 1.\n  * Si el turno elegido coincide exactamente con uno de los disponibles: Responde ÚNICAMENTE con el texto: \"¡Turno registrado exitosamente! 🎉 Detalle de tu reserva: [Día] a las [Hora].\"\n  * Si el usuario elige algo inválido, no disponible, o responde con algo irrelevante (ej: \"hola\", \"tengo tos\"): Sé muy amable, indícale que ese horario no está disponible y vuelve a listarle los turnos libres que tienes en memoria."
+        }
+      },
+      "id": "fd73c388-83d2-497d-84a8-87ecc420c04c",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -16,
+        -48
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "a18bd751-189d-49dd-b224-0a882ae4aaed",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -176,
+        176
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "MAmO23OLXT83zhQ9",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Telegram Trigger').item.json.message.chat.id }}"
+      },
+      "id": "f5b81e62-f117-41dd-aef9-cc225ac81de3",
+      "name": "Simple Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        -48,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1_z3qasZIRXYmCZ77D51KxuR1BqD3e9TJ_em0M0ZvXpo",
+          "mode": "list",
+          "cachedResultName": "Turnos libres",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_z3qasZIRXYmCZ77D51KxuR1BqD3e9TJ_em0M0ZvXpo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_z3qasZIRXYmCZ77D51KxuR1BqD3e9TJ_em0M0ZvXpo/edit#gid=0"
+        },
+        "options": {}
+      },
+      "id": "9488ecbb-2bda-42b4-99f0-8089b453993a",
+      "name": "Get row(s) in sheet in Google Sheets",
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        128,
+        176
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Y4BxcioYX097XbRi",
+          "name": "Google Sheets OAuth2 API"
         }
       }
     },
@@ -32,101 +121,21 @@
           "reply_to_message_id": "={{ $('Telegram Trigger').item.json.message.message_id }}"
         }
       },
+      "id": "875884d2-8ea7-4978-9981-0c3d3b269b25",
+      "name": "Send a text message",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        1040,
-        -16
+        416,
+        -48
       ],
-      "name": "Send a text message",
-      "id": "fd454e45-8057-4f2a-a26c-6b0a5005bc7f",
-      "webhookId": "4851f0de-e4c3-430c-a147-434781a96b70",
+      "webhookId": "d363621b-d5c9-446c-aa23-47d302129311",
       "credentials": {
         "telegramApi": {
           "id": "L1G74PeYn1AFHy55",
           "name": "Telegram account"
         }
       }
-    },
-    {
-      "parameters": {
-        "promptType": "define",
-        "text": "=Genera el mensaje de bienvenida utilizando estrictamente esta lista de turnos disponibles: {{ $json.turnosLibres }}",
-        "options": {
-          "systemMessage": "# ROL\nEres el recepcionista virtual de una clínica médica en Telegram. Tu único trabajo es formatear la lista de turnos libres que te da el usuario.\n\n# INSTRUCCIONES CRÍTICAS\n1. Lee el objeto JSON que te pasa el usuario en su mensaje. Cada clave es un DÍA y su valor es una lista de HORAS libres.\n2. Muestra ÚNICAMENTE los días que vengan dentro de ese JSON. Si un día viene con horas, lístalas separadas por barras \" | \".\n3. NO inventes días, NO asumas que otros días están vacíos, y NO digas que \"No hay turnos disponibles\" para los días que SÍ tienen horas asignadas en el JSON.\n4. Está prohibido agregar notas de automatización al final.\n\n# FORMATO DE SALIDA REQUERIDO\n¡Hola! 👋 Bienvenido a nuestro sistema de turnos médicos. Aquí tienes los horarios disponibles para los próximos días:\n\n📅 *[Nombre del Día]*\n🔹 [Hora 1] | [Hora 2] | [Hora 3]\n\nPor favor, dime qué día y horario prefieres para proceder con tu reserva."
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 3.1,
-      "position": [
-        656,
-        -16
-      ],
-      "name": "AI Agent",
-      "id": "460863e8-448e-4c23-8722-e6401861d11d"
-    },
-    {
-      "parameters": {
-        "model": {
-          "value": "gpt-4.1-mini",
-          "mode": "list"
-        },
-        "builtInTools": {},
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.3,
-      "position": [
-        624,
-        176
-      ],
-      "name": "OpenAI Chat Model",
-      "id": "e0d84b4d-b575-44c0-9fff-db6d6f6d8fcb",
-      "credentials": {
-        "openAiApi": {
-          "id": "MAmO23OLXT83zhQ9",
-          "name": "n8n free OpenAI API credits"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "operation": "getAll",
-        "calendar": {
-          "__rl": true,
-          "value": "eefacde0d1a8d4436c0e6e2915fda833d69a50cd114318ad47c2beee4bbd4270@group.calendar.google.com",
-          "mode": "list",
-          "cachedResultName": "GPN"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.googleCalendar",
-      "typeVersion": 1.3,
-      "position": [
-        176,
-        -16
-      ],
-      "id": "96ad6d4a-8bea-4e13-9473-095c556a684d",
-      "name": "Get many events",
-      "credentials": {
-        "googleCalendarOAuth2Api": {
-          "id": "MBr8fK8WfE2sCoWM",
-          "name": "Google Calendar OAuth2 API"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "// Mapear los eventos de Google Calendar a fechas nativas de JS\nconst eventosOcupados = $input.all().map(item => ({\n  inicio: new Date(item.json.start.dateTime),\n  fin: new Date(item.json.end.dateTime)\n}));\n\nconst disponibilidad = {};\n\n// Obtener la fecha de HOY en la zona horaria de Argentina usando Luxon (nativo de n8n)\nconst hoyArgentina = $today.setZone('America/Argentina/Tucuman');\n\n// Iterar por los próximos 7 días a partir de HOY\nfor (let i = 0; i < 7; i++) {\n  const fechaActual = hoyArgentina.plus({ days: i });\n  const numeroDiaSemana = fechaActual.weekday; // Lunes = 1, Domingo = 7 en Luxon\n\n  // Excluir Sábados (6) y Domingos (7)\n  if (numeroDiaSemana === 6 || numeroDiaSemana === 7) {\n    continue; \n  }\n\n  // Formatear el nombre del día \n  let diaLegible = fechaActual.setLocale('es-ES').toFormat('cccc d \\'de\\' MMMM');\n  diaLegible = diaLegible.charAt(0).toUpperCase() + diaLegible.slice(1);\n  \n  disponibilidad[diaLegible] = [];\n\n  // Evaluar slots fijos de 1 hora de 13:00 a 18:00 (Hora local de Argentina)\n  for (let hora = 13; hora < 18; hora++) {\n    \n    // Crear el inicio y fin del slot\n    const slotInicioLuxon = fechaActual.set({ hour: hora, minute: 0, second: 0, millisecond: 0 });\n    const slotFinLuxon = slotInicioLuxon.plus({ hours: 1 });\n\n    // Convertir a objetos Date\n    const slotInicio = new Date(slotInicioLuxon.toISO());\n    const slotFin = new Date(slotFinLuxon.toISO());\n\n    // Verificar si se superpone con algún evento existente\n    const conflicto = eventosOcupados.some(evento => {\n      return (slotInicio < evento.fin && slotFin > evento.inicio);\n    });\n\n    if (!conflicto) {\n      const horaLegible = slotInicioLuxon.toFormat('h:mm a');\n      disponibilidad[diaLegible].push(horaLegible);\n    }\n  }\n}\n\nreturn [{ json: { turnosLibres: disponibilidad } }];"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        432,
-        -16
-      ],
-      "id": "66e716d5-f783-4f73-8430-40d9b9c39000",
-      "name": "Code in JavaScript"
     }
   ],
   "pinData": {},
@@ -135,7 +144,18 @@
       "main": [
         [
           {
-            "node": "Get many events",
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
             "type": "main",
             "index": 0
           }
@@ -153,34 +173,23 @@
         ]
       ]
     },
-    "AI Agent": {
-      "main": [
-        [
-          {
-            "node": "Send a text message",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Get many events": {
-      "main": [
-        [
-          {
-            "node": "Code in JavaScript",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Code in JavaScript": {
-      "main": [
+    "Simple Memory": {
+      "ai_memory": [
         [
           {
             "node": "AI Agent",
-            "type": "main",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet in Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
             "index": 0
           }
         ]
@@ -190,9 +199,10 @@
   "active": false,
   "settings": {
     "executionOrder": "v1",
-    "binaryMode": "separate"
+    "binaryMode": "separate",
+    "availableInMCP": false
   },
-  "versionId": "46240194-98f7-4613-924f-d7bcae354cc6",
+  "versionId": "e735d6a5-455d-4452-b485-3451b8a405df",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "e1199092bb4762a4b72347f3c7180bf6b61334ceb6017cd61a998524578d272e"
