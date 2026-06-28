@@ -1,0 +1,35 @@
+# === Sistemas Operativos ===
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# === IDEs y Editores de Texto ===
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# === Archivos Temporales de Office / PDF ===
+# Evita subir los archivos ocultos temporales que crea Word/Excel mientras están abiertos
+~$*.docx
+~$*.xlsx
+~$*.pptx
+*.tmp
+
+# === n8n / Node.js (Por si ejecutan n8n en local o usan scripts auxiliares) ===
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.env
+.n8n/
+
+# === Seguridad y Credenciales ===
+# Por si acaso exportan datos con contraseñas o tokens por error
+*.env
+*.pem
+*.key
+credentials.json
