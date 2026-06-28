@@ -11,39 +11,39 @@
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.2,
       "position": [
-        -800,
-        -64
+        48,
+        -80
       ],
       "name": "Telegram Trigger",
-      "id": "5461c8b3-6233-48d9-83dd-e441b3e4aff2",
+      "id": "90e8fc3d-89ce-4cf8-9d50-51089d7a4760",
       "webhookId": "1df44948-568c-43fb-a7fa-43816800c90e",
       "credentials": {
         "telegramApi": {
-          "id": "b3pvW4x4Wwlm44n2",
+          "id": "L1G74PeYn1AFHy55",
           "name": "Telegram account"
         }
       }
     },
     {
       "parameters": {
-        "chatId": "={{ $json.message.chat.id }}",
-        "text": "Dame un momento",
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "= {{ $json.output }}",
         "additionalFields": {
-          "reply_to_message_id": "={{ $json.message.message_id }}"
+          "reply_to_message_id": "={{ $('Telegram Trigger').item.json.message.message_id }}"
         }
       },
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        112,
-        -112
+        944,
+        -80
       ],
       "name": "Send a text message",
-      "id": "e9fd652e-23b0-49c4-b60a-7d6c4eea414a",
+      "id": "981a3223-fe28-4e0b-b620-8261ca56ad49",
       "webhookId": "4851f0de-e4c3-430c-a147-434781a96b70",
       "credentials": {
         "telegramApi": {
-          "id": "b3pvW4x4Wwlm44n2",
+          "id": "L1G74PeYn1AFHy55",
           "name": "Telegram account"
         }
       }
@@ -51,20 +51,19 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "={{ $json.text }}",
-        "hasOutputParser": true,
+        "text": "¿Cuáles son los eventos agendados para los proximos 7 dias?",
         "options": {
-          "systemMessage": "Eres un asistente que resume audio de voz. Dime en pocas palabras lo que necesita el usuario."
+          "systemMessage": "<enfoque>Analizar los eventos del calendario y responde las consultas del usuario</enfoque>\n<ejemplo-respuesta>\n1. Evento 1: Fecha y hora: 29 de junio de 2026, de 08:00 a 09:00 \n</ejemplo-respuesta>\n"
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        -400,
-        -160
+        432,
+        -80
       ],
       "name": "AI Agent",
-      "id": "965a2abf-e5ee-47e5-a2e4-f4611e977776"
+      "id": "a6872fba-c4ae-4be2-a9af-5796409b696d"
     },
     {
       "parameters": {
@@ -78,29 +77,43 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
-        -400,
-        48
+        368,
+        128
       ],
       "name": "OpenAI Chat Model",
-      "id": "781cf26c-ffe8-487e-9d49-641237b94429"
+      "id": "4cb4aaf4-59d7-4b2a-a8c1-4045d740a6be",
+      "credentials": {
+        "openAiApi": {
+          "id": "MAmO23OLXT83zhQ9",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
     },
     {
       "parameters": {
+        "operation": "getAll",
         "calendar": {
           "__rl": true,
+          "value": "eefacde0d1a8d4436c0e6e2915fda833d69a50cd114318ad47c2beee4bbd4270@group.calendar.google.com",
           "mode": "list",
-          "value": ""
+          "cachedResultName": "GPN"
         },
-        "additionalFields": {}
+        "options": {}
       },
       "type": "n8n-nodes-base.googleCalendarTool",
       "typeVersion": 1.3,
       "position": [
-        -144,
-        64
+        656,
+        112
       ],
-      "id": "0d190368-f7ac-4ee0-9208-cc1385d19d50",
-      "name": "Create an event in Google Calendar"
+      "id": "1aad63f0-61ae-454d-ab90-a90575f9f263",
+      "name": "Get many events in Google Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "MBr8fK8WfE2sCoWM",
+          "name": "Google Calendar OAuth2 API"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -114,11 +127,6 @@
             "index": 0
           }
         ]
-      ]
-    },
-    "Send a text message": {
-      "main": [
-        []
       ]
     },
     "OpenAI Chat Model": {
@@ -143,7 +151,7 @@
         ]
       ]
     },
-    "Create an event in Google Calendar": {
+    "Get many events in Google Calendar": {
       "ai_tool": [
         [
           {
@@ -158,15 +166,14 @@
   "active": false,
   "settings": {
     "executionOrder": "v1",
-    "binaryMode": "separate",
-    "availableInMCP": false
+    "binaryMode": "separate"
   },
-  "versionId": "7b48fd0b-d0f1-47dd-8127-3aaee46ae240",
+  "versionId": "a8345caf-2b70-4742-8387-e90a987bed47",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "36957298f7a1c70121cfb5e235baca26b63c9fff0bfed7cc2b5be996ec34c39d"
+    "instanceId": "e1199092bb4762a4b72347f3c7180bf6b61334ceb6017cd61a998524578d272e"
   },
   "nodeGroups": [],
-  "id": "CGU4AIryCSYXG8JP",
+  "id": "DAnrLat99NoEGUn9",
   "tags": []
 }
