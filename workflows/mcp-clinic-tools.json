@@ -24,7 +24,7 @@
           "cachedResultName": "GPN"
         },
         "start": "={{ $fromAI('Start') }}",
-        "end": "={{ $fromAI('End') }}",
+        "end": "={{ DateTime.fromISO($fromAI('Start')).plus({ hours: 1 }).toISO() }}",
         "additionalFields": {}
       },
       "type": "n8n-nodes-base.googleCalendarTool",
@@ -44,7 +44,7 @@
     },
     {
       "parameters": {
-        "description": "OBLIGATORIO: Llama a esta herramienta SIEMPRE e INMEDIATAMENTE después de haber usado con éxito 'crear_evento_calendario'. Es mandatorio para confirmar la reserva en el sistema interno. No requiere parámetros.\n",
+        "description": "OBLIGATORIO: Llama a esta herramienta de manera mandatoria e inmediata cada vez que 'crear_evento_calendario' devuelva un resultado exitoso. Si no ejecutas esta herramienta, la reserva quedará incompleta y fallará el sistema.",
         "workflowId": {
           "__rl": true,
           "value": "DAnrLat99NoEGUn9",
@@ -71,8 +71,21 @@
     },
     {
       "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dateTimeTool",
+      "typeVersion": 2,
+      "position": [
+        192,
+        176
+      ],
+      "id": "2b23d129-5632-468e-97e1-de82a6b824ae",
+      "name": "Date & Time"
+    },
+    {
+      "parameters": {
         "descriptionType": "manual",
-        "toolDescription": "Llama a esta herramienta SIEMPRE e INMEDIATAMENTE después de haber usado con éxito 'crear_evento_calendario'. Sirve para sincronizar y guardar los cambios en la base de datos de Supabase. No requiere parámetros de entrada.",
+        "toolDescription": "Utilízala para consultar la base de datos de disponibilidad y obtener el JSON de turnos libres. Lánzala siempre al inicio de la conversación o cuando el usuario solicite ver los horarios disponibles.",
         "operation": "get",
         "tableId": "disponibilidad",
         "filters": {
@@ -88,29 +101,16 @@
       "typeVersion": 1,
       "position": [
         352,
-        176
+        160
       ],
       "id": "3fe7c5de-cb5d-4086-b480-f0fe7882bf42",
-      "name": "Get a row in Supabase",
+      "name": "consultar_turnos",
       "credentials": {
         "supabaseApi": {
           "id": "1xvdjuUGMREuxrBZ",
           "name": "Supabase account"
         }
       }
-    },
-    {
-      "parameters": {
-        "options": {}
-      },
-      "type": "n8n-nodes-base.dateTimeTool",
-      "typeVersion": 2,
-      "position": [
-        192,
-        176
-      ],
-      "id": "2b23d129-5632-468e-97e1-de82a6b824ae",
-      "name": "Date & Time"
     }
   ],
   "pinData": {},
@@ -137,7 +137,7 @@
         ]
       ]
     },
-    "Get a row in Supabase": {
+    "Date & Time": {
       "ai_tool": [
         [
           {
@@ -148,7 +148,7 @@
         ]
       ]
     },
-    "Date & Time": {
+    "consultar_turnos": {
       "ai_tool": [
         [
           {
@@ -165,7 +165,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "b24e610b-f42d-4562-9aa8-7ac0f5611edf",
+  "versionId": "b58f3df6-2927-49ff-a12d-a42385ee5650",
   "meta": {
     "instanceId": "e1199092bb4762a4b72347f3c7180bf6b61334ceb6017cd61a998524578d272e"
   },
