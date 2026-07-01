@@ -1,5 +1,5 @@
 {
-  "name": "gpn-subworkflow",
+  "name": "subworkflow-db-sync",
   "nodes": [
     {
       "parameters": {

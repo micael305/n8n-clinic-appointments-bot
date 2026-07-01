@@ -57,7 +57,7 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
-        -384,
+        -224,
         160
       ],
       "credentials": {
@@ -77,7 +77,7 @@
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.4,
       "position": [
-        -240,
+        -96,
         160
       ]
     },
@@ -107,87 +107,17 @@
     },
     {
       "parameters": {
-        "descriptionType": "manual",
-        "toolDescription": "Llama a esta herramienta SIEMPRE e INMEDIATAMENTE después de haber usado con éxito 'crear_evento_calendario'. Sirve para sincronizar y guardar los cambios en la base de datos de Supabase. No requiere parámetros de entrada.",
-        "operation": "get",
-        "tableId": "disponibilidad",
-        "filters": {
-          "conditions": [
-            {
-              "keyName": "id",
-              "keyValue": "1"
-            }
-          ]
-        }
+        "endpointUrl": "https://gpnaccount.app.n8n.cloud/mcp/6f35233a-2ef4-4593-9695-fca7d29ef1fa",
+        "options": {}
       },
-      "type": "n8n-nodes-base.supabaseTool",
-      "typeVersion": 1,
-      "position": [
-        256,
-        128
-      ],
-      "id": "654f7cc2-5a81-43f2-ab4e-21dcd496e47a",
-      "name": "Get a row in Supabase",
-      "credentials": {
-        "supabaseApi": {
-          "id": "1xvdjuUGMREuxrBZ",
-          "name": "Supabase account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "calendar": {
-          "__rl": true,
-          "value": "eefacde0d1a8d4436c0e6e2915fda833d69a50cd114318ad47c2beee4bbd4270@group.calendar.google.com",
-          "mode": "list",
-          "cachedResultName": "GPN"
-        },
-        "start": "={{ $fromAI('Start') }}",
-        "end": "={{ $fromAI('End') }}",
-        "additionalFields": {}
-      },
-      "type": "n8n-nodes-base.googleCalendarTool",
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
       "typeVersion": 1.3,
       "position": [
-        -80,
-        144
+        32,
+        160
       ],
-      "id": "ae65f334-969a-4c94-8fde-9531f2a56868",
-      "name": "crear_evento_calendario",
-      "credentials": {
-        "googleCalendarOAuth2Api": {
-          "id": "MBr8fK8WfE2sCoWM",
-          "name": "Google Calendar OAuth2 API"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "description": "OBLIGATORIO: Llama a esta herramienta SIEMPRE e INMEDIATAMENTE después de haber usado con éxito 'crear_evento_calendario'. Es mandatorio para confirmar la reserva en el sistema interno. No requiere parámetros.\n",
-        "workflowId": {
-          "__rl": true,
-          "value": "DAnrLat99NoEGUn9",
-          "mode": "id",
-          "cachedResultUrl": "/workflow/DAnrLat99NoEGUn9"
-        },
-        "workflowInputs": {
-          "mappingMode": "defineBelow",
-          "value": {},
-          "matchingColumns": [],
-          "schema": [],
-          "attemptToConvertTypes": false,
-          "convertFieldsToString": false
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
-      "typeVersion": 2.2,
-      "position": [
-        96,
-        144
-      ],
-      "id": "bab8ed5a-d7a4-42b2-b276-b9c303d8f5d8",
-      "name": "actualizar_disponibilidad_supabase"
+      "id": "659220f8-0b63-4696-99ab-192213caa716",
+      "name": "MCP Client"
     }
   ],
   "pinData": {},
@@ -236,29 +166,7 @@
         ]
       ]
     },
-    "Get a row in Supabase": {
-      "ai_tool": [
-        [
-          {
-            "node": "AI Agent",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "crear_evento_calendario": {
-      "ai_tool": [
-        [
-          {
-            "node": "AI Agent",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "actualizar_disponibilidad_supabase": {
+    "MCP Client": {
       "ai_tool": [
         [
           {
@@ -276,7 +184,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "21369a28-dfd8-461d-8359-e65b8b52e98c",
+  "versionId": "6e435f83-3367-4154-9f57-19a173f023ef",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "e1199092bb4762a4b72347f3c7180bf6b61334ceb6017cd61a998524578d272e"
