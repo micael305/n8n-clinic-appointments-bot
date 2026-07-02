@@ -1,0 +1,191 @@
+{
+  "name": "subworkflow-db-sync",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "email_paciente"
+            },
+            {
+              "name": "nombre_paciente"
+            },
+            {
+              "name": "detalles_turno"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -288,
+        -32
+      ],
+      "id": "8b2c7724-868d-4fe8-a51c-6c69e3195898",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "eefacde0d1a8d4436c0e6e2915fda833d69a50cd114318ad47c2beee4bbd4270@group.calendar.google.com",
+          "mode": "list",
+          "cachedResultName": "GPN"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        -80,
+        -32
+      ],
+      "id": "dd87b170-225d-4fd7-aeea-9a57175f3dfa",
+      "name": "Get many events",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "Q0GgoL9mJNjp31gY",
+          "name": "Google Calendar OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const eventosOcupados = $input.all().map(item => ({\n  inicio: new Date(item.json.start.dateTime),\n  fin: new Date(item.json.end.dateTime)\n}));\n\nconst disponibilidad = {};\nconst hoyArgentina = $now.setZone('America/Argentina/Tucuman');\n\nfor (let i = 0; i < 7; i++) {\n  if (i === 0) {\n    continue;\n  }\n\n  let fechaActual = hoyArgentina.plus({ days: i }).set({ hour: 12, minute: 0, second: 0, millisecond: 0 });\n  const numeroDiaSemana = fechaActual.weekday; \n\n  if (numeroDiaSemana === 6 || numeroDiaSemana === 7) {\n    continue; \n  }\n\n  let diaLegible = fechaActual.setLocale('es-ES').toFormat('cccc d \\'de\\' MMMM');\n  diaLegible = diaLegible.charAt(0).toUpperCase() + diaLegible.slice(1);\n\n  const slotsDelDia = [];\n\n  for (let hora = 13; hora < 18; hora++) {\n    const slotInicioLuxon = fechaActual.set({ hour: hora, minute: 0, second: 0, millisecond: 0 });\n    const slotFinLuxon = slotInicioLuxon.plus({ hours: 1 });\n\n    const slotInicio = new Date(slotInicioLuxon.toISO());\n    const slotFin = new Date(slotFinLuxon.toISO());\n\n    const conflicto = eventosOcupados.some(evento => {\n      return (slotInicio < evento.fin && slotFin > evento.inicio);\n    });\n\n    if (!conflicto) {\n      const horaLegible = slotInicioLuxon.toFormat('h:mm a');\n      slotsDelDia.push(horaLegible);\n    }\n  }\n\n  if (slotsDelDia.length > 0) {\n    disponibilidad[diaLegible] = slotsDelDia;\n  }\n}\n\nreturn [{ json: { turnosLibres: disponibilidad } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        128,
+        -32
+      ],
+      "id": "ba65a079-3807-4359-a25e-60945577a696",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "disponibilidad",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "1"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "turnos_json",
+              "fieldValue": "={{ JSON.stringify($json.turnosLibres) }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        320,
+        -32
+      ],
+      "id": "56e8b84e-0554-4667-8955-d5a2197c31b1",
+      "name": "Update a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "UHUCfWlbHRh03FgN",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('When Executed by Another Workflow').item.json.email_paciente }}",
+        "subject": "¡Tu turno médico ha sido confirmado! 🎉",
+        "message": "=<!DOCTYPE html> <html> <head>   <meta charset=\"utf-8\">   <style>     body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f7f6; color: #333333; margin: 0; padding: 0; }     .container { max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }     .header { background: linear-gradient(135deg, #007bef, #0056b3); padding: 40px 20px; text-align: center; color: #ffffff; }     .header h1 { margin: 0; font-size: 26px; font-weight: 600; letter-spacing: 0.5px; }     .content { padding: 40px 30px; line-height: 1.6; }     .content p { font-size: 16px; color: #555555; margin-bottom: 25px; }     .card { background-color: #f8fafc; border-left: 4px solid #007bef; padding: 20px; border-radius: 4px; margin-bottom: 30px; }     .card-title { font-weight: bold; color: #0056b3; margin-bottom: 10px; font-size: 15px; text-transform: uppercase; }     .card-item { margin: 5px 0; font-size: 15px; }     .footer { background-color: #f4f7f6; text-align: center; padding: 20px; font-size: 12px; color: #888888; border-top: 1px solid #eef2f5; }   </style> </head> <body>   <div class=\"container\">     <div class=\"header\">       <h1>¡Tu turno está confirmado! 🎉</h1>     </div>     <div class=\"content\">       <p>Hola <strong>{{ $('When Executed by Another Workflow').item.json.nombre_paciente }}</strong>,</p>       <p>Te informamos que tu cita médica ha sido registrada de forma exitosa en nuestro sistema. A continuación, te compartimos los detalles de tu reserva:</p>              <div class=\"card\">         <div class=\"card-title\">Detalles de la Cita</div>         <div class=\"card-item\"><strong>Paciente:</strong> {{ $('When Executed by Another Workflow').item.json.nombre_paciente }}</div>         <div class=\"card-item\"><strong>Reserva:</strong> {{ $('When Executed by Another Workflow').item.json.detalles_turno }}</div>       </div>              <p>Si necesitas realizar alguna modificación o cancelación, por favor comunícate con nosotros mediante este chat de Telegram.</p>       <p>¡Gracias por confiar en nuestra clínica!</p>     </div>     <div class=\"footer\">       Este es un mensaje automático enviado por nuestro Sistema de Gestión Clínica. Por favor no respondas directamente a esta dirección.     </div>   </div> </body> </html>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        528,
+        -32
+      ],
+      "id": "6f5e40b8-99a3-4c25-8483-d25d61165e41",
+      "name": "Send a message",
+      "webhookId": "4b9f5fe8-6b35-456d-b56d-ae5eb840b35a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "fhAaJAF5hhTU5INZ",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Get many events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many events": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Update a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a row": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "8cec818d-478d-4ae8-998e-e1eaaa6fe852",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9c22d813620af0e278cd7fb069c4aa26787e6b5829bbd995ad1b658d43fe75f3"
+  },
+  "nodeGroups": [],
+  "id": "Z8Ntwvp8RAilTbLR",
+  "tags": []
+}

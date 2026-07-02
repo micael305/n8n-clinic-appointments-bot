@@ -1,5 +1,5 @@
 {
-  "name": "gpn",
+  "name": "main-workflow",
   "nodes": [
     {
       "parameters": {
@@ -9,18 +9,61 @@
         "additionalFields": {}
       },
       "type": "n8n-nodes-base.telegramTrigger",
-      "typeVersion": 1.2,
+      "typeVersion": 1.3,
       "position": [
-        -64,
-        -16
+        -160,
+        0
       ],
+      "id": "b516a018-f1e8-4051-8e8e-9093234fde11",
       "name": "Telegram Trigger",
-      "id": "db1f04cf-d315-4493-8a9a-39db91aa8295",
-      "webhookId": "1df44948-568c-43fb-a7fa-43816800c90e",
+      "webhookId": "87c4e864-49ba-4f24-92d4-42a9fea716c7",
       "credentials": {
         "telegramApi": {
-          "id": "L1G74PeYn1AFHy55",
+          "id": "VfhJK7irauwRGhtT",
           "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=={{ $json.message.text }}",
+        "options": {
+          "systemMessage": "# ROL\nEres el recepcionista virtual de una clínica médica en Telegram. Tu objetivo es guiar al usuario para consultar turnos, validar su selección, recolectar sus datos personales (DNI, Apellido y Nombre, y Correo) y, una vez todo sea válido, confirmar la reserva en Google Calendar y sincronizar el sistema.\n\n# REGLAS CRÍTICAS DE OPERACIÓN\n1. CONSULTA OBLIGATORIA: Siempre que el usuario salude o pida ver los turnos, debes llamar a la herramienta `consultar_turnos_en_db`. Prohibido inventar horarios.\n2. INTERRUPCIÓN DEL USUARIO (CAMBIO DE TURNO): En cualquier momento del flujo, si el usuario dice algo como \"quiero cambiar de horario\", \"otro turno\", \"me equivoqué de hora\" o menciona un nuevo día/horario, debes cancelar la recolección actual, borrar mentalmente los datos viejos y procesar el nuevo turno (o volver a listar los turnos de Supabase si no especificó cuál).\n3. CONTROL DE SELECCIÓN INICIAL (EL BUCLE): Si el usuario no ha elegido ningún turno válido y envía texto irrelevante, responde indicando que seleccione uno de la lista y muéstrasela.\n\n# FLUJO DE TRABAJO (PASOS OBLIGATORIOS)\n\n- PASO 1 (Consulta y Formato): Al leer `turnos_json`, muéstralos con este formato:\n  ¡Hola! 👋 Bienvenido a nuestro sistema de turnos médicos. Aquí tienes los horarios disponibles:\n  📅 *[Nombre del Día]*\n  🔹 [Hora 1] | [Hora 2] | [Hora 3]\n  Por favor, dime qué día y horario prefieres para proceder con tu reserva.\n\n- PASO 2 (Fase de Datos - SOLICITUD COMPLETA EN UN MENSAJE): Una vez que el usuario elija un turno VÁLIDO, debes responderle en un único e idéntico mensaje aclarando que el turno NO está reservado todavía y solicitando todos los datos juntos:\n  \"Perfecto, has seleccionado el turno para el [Día] a las [Hora]. ⚠️ TEN EN CUENTA: Tu turno AÚN NO HA SIDO RESERVADO. \n\n  Para completar la reserva de manera exitosa, por favor envíame en tu próximo mensaje los siguientes 3 datos:\n  1. Número de documento (DNI)\n  2. Apellido y Nombre completo\n  3. Correo electrónico\n\n  *(Nota: Si te equivocas o quieres elegir otro horario, puedes escribir 'cambiar turno' en cualquier momento)*\"\n\n- PASO 3 (Validación Estricta de Datos Recibidos): Cuando el usuario responda a la solicitud del Paso 2, analiza el mensaje. Validando que el DNI tenga 7-8 números y el correo contenga \"@\" y un dominio. Si hay errores, no muestres los turnos, mantén la posición exigiendo los datos del turno pre-seleccionado.\n\n- PASO 4 (Doble Verificación y Reserva - ORDEN ESTRICTO): SOLO cuando los datos del Paso 3 sean correctos, debes ejecutar obligatoriamente estas herramientas en este orden exacto:\n  \n  1. Llama a `consultar_turnos`: Analiza minuciosamente el contenido de `turnos_json` devuelto.\n     - Busca el día y horario elegido por el usuario (ej: \"Jueves 2 de julio\" y \"1:00 PM\") dentro del JSON que te devolvió Supabase.\n     - SI EL HORARIO YA NO FIGURA EN EL JSON: Significa que se ocupó de verdad. SOLO en este caso detén la reserva y dile: \"¡Uh, qué lástima! Alguien acaba de reservar el turno para el [Día] a las [Hora] hace unos instantes...\" y lístale las opciones restantes.\n     - SI EL HORARIO SÍ EXISTE Y ESTÁ VISIBLE EN EL JSON: Procede de inmediato a llamar a la herramienta `crear_evento_calendario` utilizando el String ISO 8601 con offset en 'Start' (Ej: \"2026-07-02T13:00:00-03:00\"). En el título coloca: \"Turno: [Nombre] - DNI [Número]\". *(Nota: No envíes el parámetro 'End', el sistema lo calcula a una hora automáticamente)*.\n\n  2. Llama a `actualizar_disponibilidad_supabase`: Llama a esta herramienta inmediatamente después del éxito en Google Calendar. Pásale obligatoriamente los parámetros 'dia' y 'hora' del turno para sincronizar el sistema hacia Supabase. ADEMÁS, es obligatorio que extraigas y envíes los datos del paciente en los parámetros de entrada de la herramienta: 'email_paciente', 'nombre_paciente' y 'detalles_turno' (Ej: \"Viernes 3 de julio a las 2:00 PM\").\n\n- PASO 5 (Confirmación Final): Una vez completado el PASO 4 con éxito en el calendario, confirma al usuario que su turno ahora SÍ ha sido reservado de forma definitiva y resume los detalles de su cita."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        112,
+        0
+      ],
+      "id": "e37c27fc-a46a-4e83-8f17-300dc9aec1f7",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -176,
+        224
+      ],
+      "id": "1036566e-d252-45e1-86a8-9b6cbb5e99a5",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "yWu5Dns1CudRZ5A6",
+          "name": "OpenAI account"
         }
       }
     },
@@ -35,98 +78,166 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        1040,
-        -16
+        592,
+        0
       ],
+      "id": "b327ff1a-459f-411b-afb8-131f2e140c31",
       "name": "Send a text message",
-      "id": "fd454e45-8057-4f2a-a26c-6b0a5005bc7f",
-      "webhookId": "4851f0de-e4c3-430c-a147-434781a96b70",
+      "webhookId": "fc06be3a-1c3b-4c00-8f85-3902db24237f",
       "credentials": {
         "telegramApi": {
-          "id": "L1G74PeYn1AFHy55",
+          "id": "VfhJK7irauwRGhtT",
           "name": "Telegram account"
         }
       }
     },
     {
       "parameters": {
-        "promptType": "define",
-        "text": "=Genera el mensaje de bienvenida utilizando estrictamente esta lista de turnos disponibles: {{ $json.turnosLibres }}",
-        "options": {
-          "systemMessage": "# ROL\nEres el recepcionista virtual de una clínica médica en Telegram. Tu único trabajo es formatear la lista de turnos libres que te da el usuario.\n\n# INSTRUCCIONES CRÍTICAS\n1. Lee el objeto JSON que te pasa el usuario en su mensaje. Cada clave es un DÍA y su valor es una lista de HORAS libres.\n2. Muestra ÚNICAMENTE los días que vengan dentro de ese JSON. Si un día viene con horas, lístalas separadas por barras \" | \".\n3. NO inventes días, NO asumas que otros días están vacíos, y NO digas que \"No hay turnos disponibles\" para los días que SÍ tienen horas asignadas en el JSON.\n4. Está prohibido agregar notas de automatización al final.\n\n# FORMATO DE SALIDA REQUERIDO\n¡Hola! 👋 Bienvenido a nuestro sistema de turnos médicos. Aquí tienes los horarios disponibles para los próximos días:\n\n📅 *[Nombre del Día]*\n🔹 [Hora 1] | [Hora 2] | [Hora 3]\n\nPor favor, dime qué día y horario prefieres para proceder con tu reserva."
-        }
+        "sessionIdType": "customKey",
+        "sessionKey": "=={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "contextWindowLength": 6
       },
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 3.1,
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
       "position": [
-        656,
-        -16
+        -32,
+        224
       ],
-      "name": "AI Agent",
-      "id": "460863e8-448e-4c23-8722-e6401861d11d"
+      "id": "6d281876-b934-4bee-99bd-24aed7880b64",
+      "name": "Simple Memory"
     },
     {
       "parameters": {
-        "model": {
-          "value": "gpt-4.1-mini",
-          "mode": "list"
-        },
-        "builtInTools": {},
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.3,
-      "position": [
-        624,
-        176
-      ],
-      "name": "OpenAI Chat Model",
-      "id": "e0d84b4d-b575-44c0-9fff-db6d6f6d8fcb",
-      "credentials": {
-        "openAiApi": {
-          "id": "MAmO23OLXT83zhQ9",
-          "name": "n8n free OpenAI API credits"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "operation": "getAll",
         "calendar": {
           "__rl": true,
           "value": "eefacde0d1a8d4436c0e6e2915fda833d69a50cd114318ad47c2beee4bbd4270@group.calendar.google.com",
           "mode": "list",
           "cachedResultName": "GPN"
         },
-        "options": {}
+        "start": "={{ $fromAI('Start') }}",
+        "end": "={{ DateTime.fromISO($fromAI('Start')).plus({ hours: 1 }).toISO() }}",
+        "additionalFields": {}
       },
-      "type": "n8n-nodes-base.googleCalendar",
+      "type": "n8n-nodes-base.googleCalendarTool",
       "typeVersion": 1.3,
       "position": [
-        176,
-        -16
+        416,
+        240
       ],
-      "id": "96ad6d4a-8bea-4e13-9473-095c556a684d",
-      "name": "Get many events",
+      "id": "56935f35-7548-4fa2-9e6f-d30b0094f2cc",
+      "name": "crear_evento_calendario",
       "credentials": {
         "googleCalendarOAuth2Api": {
-          "id": "MBr8fK8WfE2sCoWM",
+          "id": "Q0GgoL9mJNjp31gY",
           "name": "Google Calendar OAuth2 API"
         }
       }
     },
     {
       "parameters": {
-        "jsCode": "// Mapear los eventos de Google Calendar a fechas nativas de JS\nconst eventosOcupados = $input.all().map(item => ({\n  inicio: new Date(item.json.start.dateTime),\n  fin: new Date(item.json.end.dateTime)\n}));\n\nconst disponibilidad = {};\n\n// Obtener la fecha de HOY en la zona horaria de Argentina usando Luxon (nativo de n8n)\nconst hoyArgentina = $today.setZone('America/Argentina/Tucuman');\n\n// Iterar por los próximos 7 días a partir de HOY\nfor (let i = 0; i < 7; i++) {\n  const fechaActual = hoyArgentina.plus({ days: i });\n  const numeroDiaSemana = fechaActual.weekday; // Lunes = 1, Domingo = 7 en Luxon\n\n  // Excluir Sábados (6) y Domingos (7)\n  if (numeroDiaSemana === 6 || numeroDiaSemana === 7) {\n    continue; \n  }\n\n  // Formatear el nombre del día \n  let diaLegible = fechaActual.setLocale('es-ES').toFormat('cccc d \\'de\\' MMMM');\n  diaLegible = diaLegible.charAt(0).toUpperCase() + diaLegible.slice(1);\n  \n  disponibilidad[diaLegible] = [];\n\n  // Evaluar slots fijos de 1 hora de 13:00 a 18:00 (Hora local de Argentina)\n  for (let hora = 13; hora < 18; hora++) {\n    \n    // Crear el inicio y fin del slot\n    const slotInicioLuxon = fechaActual.set({ hour: hora, minute: 0, second: 0, millisecond: 0 });\n    const slotFinLuxon = slotInicioLuxon.plus({ hours: 1 });\n\n    // Convertir a objetos Date\n    const slotInicio = new Date(slotInicioLuxon.toISO());\n    const slotFin = new Date(slotFinLuxon.toISO());\n\n    // Verificar si se superpone con algún evento existente\n    const conflicto = eventosOcupados.some(evento => {\n      return (slotInicio < evento.fin && slotFin > evento.inicio);\n    });\n\n    if (!conflicto) {\n      const horaLegible = slotInicioLuxon.toFormat('h:mm a');\n      disponibilidad[diaLegible].push(horaLegible);\n    }\n  }\n}\n\nreturn [{ json: { turnosLibres: disponibilidad } }];"
+        "options": {}
       },
-      "type": "n8n-nodes-base.code",
+      "type": "n8n-nodes-base.dateTimeTool",
       "typeVersion": 2,
       "position": [
-        432,
-        -16
+        288,
+        224
       ],
-      "id": "66e716d5-f783-4f73-8430-40d9b9c39000",
-      "name": "Code in JavaScript"
+      "id": "21a3dda1-b035-4d06-a463-6087419cd729",
+      "name": "Date & Time"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Utilízala para consultar la base de datos de disponibilidad y obtener el JSON de turnos libres. Lánzala siempre al inicio de la conversación o cuando el usuario solicite ver los horarios disponibles.",
+        "operation": "get",
+        "tableId": "disponibilidad",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "1"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        544,
+        240
+      ],
+      "id": "1bd5421f-dff7-4e1e-8c0a-ea97b5809887",
+      "name": "consultar_turnos",
+      "credentials": {
+        "supabaseApi": {
+          "id": "UHUCfWlbHRh03FgN",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "OBLIGATORIO: Llama a esta herramienta de manera mandatoria e inmediata cada vez que 'crear_evento_calendario' devuelva un resultado exitoso. Si no ejecutas esta herramienta, la reserva quedará incompleta y fallará el sistema.",
+        "workflowId": {
+          "__rl": true,
+          "value": "Z8Ntwvp8RAilTbLR",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/Z8Ntwvp8RAilTbLR",
+          "cachedResultName": "subworkflow-db-sync"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "email_paciente": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('email_paciente', ``, 'string') }}",
+            "nombre_paciente": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('nombre_paciente', ``, 'string') }}",
+            "detalles_turno": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('detalles_turno', ``, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "email_paciente",
+              "displayName": "email_paciente",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "nombre_paciente",
+              "displayName": "nombre_paciente",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "detalles_turno",
+              "displayName": "detalles_turno",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        144,
+        224
+      ],
+      "id": "0ca5a1e5-a766-4e1b-a25a-0851fa992d8c",
+      "name": "actualizar_disponibilidad_supabase"
     }
   ],
   "pinData": {},
@@ -135,7 +246,7 @@
       "main": [
         [
           {
-            "node": "Get many events",
+            "node": "AI Agent",
             "type": "main",
             "index": 0
           }
@@ -164,40 +275,74 @@
         ]
       ]
     },
-    "Get many events": {
-      "main": [
+    "Simple Memory": {
+      "ai_memory": [
         [
           {
-            "node": "Code in JavaScript",
-            "type": "main",
+            "node": "AI Agent",
+            "type": "ai_memory",
             "index": 0
           }
         ]
       ]
     },
-    "Code in JavaScript": {
-      "main": [
+    "crear_evento_calendario": {
+      "ai_tool": [
         [
           {
             "node": "AI Agent",
-            "type": "main",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Date & Time": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "actualizar_disponibilidad_supabase": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "consultar_turnos": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
             "index": 0
           }
         ]
       ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1",
-    "binaryMode": "separate"
+    "binaryMode": "separate",
+    "availableInMCP": false
   },
-  "versionId": "46240194-98f7-4613-924f-d7bcae354cc6",
+  "versionId": "6c9d59d4-3456-4c89-8e49-2e3979aef03f",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "e1199092bb4762a4b72347f3c7180bf6b61334ceb6017cd61a998524578d272e"
+    "instanceId": "9c22d813620af0e278cd7fb069c4aa26787e6b5829bbd995ad1b658d43fe75f3"
   },
   "nodeGroups": [],
-  "id": "cP9vtn5aSJfaVH18",
+  "id": "zPs2TVjWT6vnRdEB",
   "tags": []
 }
