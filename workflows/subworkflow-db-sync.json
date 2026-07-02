@@ -3,6 +3,19 @@
   "nodes": [
     {
       "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -208,
+        0
+      ],
+      "id": "8b2c7724-868d-4fe8-a51c-6c69e3195898",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
         "operation": "getAll",
         "calendar": {
           "__rl": true,
@@ -10,20 +23,19 @@
           "mode": "list",
           "cachedResultName": "GPN"
         },
-        "returnAll": true,
         "options": {}
       },
-      "id": "c06e8c68-bd15-4920-bf93-7b8b690fa0e3",
-      "name": "Get many events",
       "type": "n8n-nodes-base.googleCalendar",
       "typeVersion": 1.3,
       "position": [
-        32,
-        -64
+        0,
+        0
       ],
+      "id": "dd87b170-225d-4fd7-aeea-9a57175f3dfa",
+      "name": "Get many events",
       "credentials": {
         "googleCalendarOAuth2Api": {
-          "id": "MBr8fK8WfE2sCoWM",
+          "id": "Q0GgoL9mJNjp31gY",
           "name": "Google Calendar OAuth2 API"
         }
       }
@@ -32,14 +44,14 @@
       "parameters": {
         "jsCode": "const eventosOcupados = $input.all().map(item => ({\n  inicio: new Date(item.json.start.dateTime),\n  fin: new Date(item.json.end.dateTime)\n}));\n\nconst disponibilidad = {};\nconst hoyArgentina = $now.setZone('America/Argentina/Tucuman');\n\nfor (let i = 0; i < 7; i++) {\n  if (i === 0) {\n    continue;\n  }\n\n  let fechaActual = hoyArgentina.plus({ days: i }).set({ hour: 12, minute: 0, second: 0, millisecond: 0 });\n  const numeroDiaSemana = fechaActual.weekday; \n\n  if (numeroDiaSemana === 6 || numeroDiaSemana === 7) {\n    continue; \n  }\n\n  let diaLegible = fechaActual.setLocale('es-ES').toFormat('cccc d \\'de\\' MMMM');\n  diaLegible = diaLegible.charAt(0).toUpperCase() + diaLegible.slice(1);\n\n  const slotsDelDia = [];\n\n  for (let hora = 13; hora < 18; hora++) {\n    const slotInicioLuxon = fechaActual.set({ hour: hora, minute: 0, second: 0, millisecond: 0 });\n    const slotFinLuxon = slotInicioLuxon.plus({ hours: 1 });\n\n    const slotInicio = new Date(slotInicioLuxon.toISO());\n    const slotFin = new Date(slotFinLuxon.toISO());\n\n    const conflicto = eventosOcupados.some(evento => {\n      return (slotInicio < evento.fin && slotFin > evento.inicio);\n    });\n\n    if (!conflicto) {\n      const horaLegible = slotInicioLuxon.toFormat('h:mm a');\n      slotsDelDia.push(horaLegible);\n    }\n  }\n\n  if (slotsDelDia.length > 0) {\n    disponibilidad[diaLegible] = slotsDelDia;\n  }\n}\n\nreturn [{ json: { turnosLibres: disponibilidad } }];"
       },
-      "id": "18f5dab2-ffb0-4bb4-9f3c-202f983fda39",
-      "name": "Code in JavaScript",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        256,
-        -64
-      ]
+        208,
+        0
+      ],
+      "id": "ba65a079-3807-4359-a25e-60945577a696",
+      "name": "Code in JavaScript"
     },
     {
       "parameters": {
@@ -64,37 +76,35 @@
           ]
         }
       },
-      "id": "bd7c8dd9-c763-4211-a327-66e223054a88",
-      "name": "Update a row",
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        480,
-        -64
+        400,
+        0
       ],
+      "id": "56e8b84e-0554-4667-8955-d5a2197c31b1",
+      "name": "Update a row",
       "credentials": {
         "supabaseApi": {
-          "id": "1xvdjuUGMREuxrBZ",
+          "id": "UHUCfWlbHRh03FgN",
           "name": "Supabase account"
         }
       }
-    },
-    {
-      "parameters": {
-        "inputSource": "passthrough"
-      },
-      "type": "n8n-nodes-base.executeWorkflowTrigger",
-      "typeVersion": 1.2,
-      "position": [
-        -192,
-        -64
-      ],
-      "id": "8d870548-e153-4ed6-9d66-6576d245d2cc",
-      "name": "When Executed by Another Workflow"
     }
   ],
   "pinData": {},
   "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Get many events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Get many events": {
       "main": [
         [
@@ -116,17 +126,6 @@
           }
         ]
       ]
-    },
-    "When Executed by Another Workflow": {
-      "main": [
-        [
-          {
-            "node": "Get many events",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
     }
   },
   "active": true,
@@ -135,12 +134,12 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "cdd5f54b-3150-4013-b83d-5ef3fa0163dd",
+  "versionId": "30c279c0-e538-42bf-9857-0a2ecf35901f",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "e1199092bb4762a4b72347f3c7180bf6b61334ceb6017cd61a998524578d272e"
+    "instanceId": "9c22d813620af0e278cd7fb069c4aa26787e6b5829bbd995ad1b658d43fe75f3"
   },
   "nodeGroups": [],
-  "id": "DAnrLat99NoEGUn9",
+  "id": "Z8Ntwvp8RAilTbLR",
   "tags": []
 }
