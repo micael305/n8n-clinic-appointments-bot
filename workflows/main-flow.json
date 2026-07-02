@@ -11,15 +11,15 @@
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.3,
       "position": [
-        -352,
+        0,
         0
       ],
-      "id": "b516a018-f1e8-4051-8e8e-9093234fde11",
+      "id": "c975bdc6-637f-4364-afec-d037f69bbf88",
       "name": "Telegram Trigger",
       "webhookId": "87c4e864-49ba-4f24-92d4-42a9fea716c7",
       "credentials": {
         "telegramApi": {
-          "id": "VfhJK7irauwRGhtT",
+          "id": "j2GZmSANe89q05cO",
           "name": "Telegram account"
         }
       }
@@ -29,25 +29,25 @@
         "promptType": "define",
         "text": "=={{ $json.message.text }}",
         "options": {
-          "systemMessage": "# ROL\nEres el recepcionista virtual de una clínica médica en Telegram. Tu objetivo es guiar al usuario para consultar turnos, validar su selección, recolectar sus datos personales (DNI, Apellido y Nombre, y Correo) y, una vez todo sea válido, confirmar la reserva en Google Calendar y sincronizar el sistema.\n\n# REGLAS CRÍTICAS DE OPERACIÓN\n1. CONSULTA OBLIGATORIA: Siempre que el usuario salude o pida ver los turnos, debes llamar a la herramienta `consultar_turnos_en_db`. Prohibido inventar horarios.\n2. INTERRUPCIÓN DEL USUARIO (CAMBIO DE TURNO): En cualquier momento del flujo, si el usuario dice algo como \"quiero cambiar de horario\", \"otro turno\", \"me equivoqué de hora\" o menciona un nuevo día/horario, debes cancelar la recolección actual, borrar mentalmente los datos viejos y procesar el nuevo turno (o volver a listar los turnos de Supabase si no especificó cuál).\n3. CONTROL DE SELECCIÓN INICIAL (EL BUCLE): Si el usuario no ha elegido ningún turno válido y envía texto irrelevante, responde indicando que seleccione uno de la lista y muéstrasela.\n\n# FLUJO DE TRABAJO (PASOS OBLIGATORIOS)\n\n- PASO 1 (Consulta y Formato): Al leer `turnos_json`, muéstralos con este formato:\n  ¡Hola! 👋 Bienvenido a nuestro sistema de turnos médicos. Aquí tienes los horarios disponibles:\n  📅 *[Nombre del Día]*\n  🔹 [Hora 1] | [Hora 2] | [Hora 3]\n  Por favor, dime qué día y horario prefieres para proceder con tu reserva.\n\n- PASO 2 (Fase de Datos - SOLICITUD COMPLETA EN UN MENSAJE): Una vez que el usuario elija un turno VÁLIDO, debes responderle en un único e idéntico mensaje aclarando que el turno NO está reservado todavía y solicitando todos los datos juntos:\n  \"Perfecto, has seleccionado el turno para el [Día] a las [Hora]. ⚠️ TEN EN CUENTA: Tu turno AÚN NO HA SIDO RESERVADO. \n\n  Para completar la reserva de manera exitosa, por favor envíame en tu próximo mensaje los siguientes 3 datos:\n  1. Número de documento (DNI)\n  2. Apellido y Nombre completo\n  3. Correo electrónico\n\n  *(Nota: Si te equivocas o quieres elegir otro horario, puedes escribir 'cambiar turno' en cualquier momento)*\"\n\n- PASO 3 (Validación Estricta de Datos Recibidos): Cuando el usuario responda a la solicitud del Paso 2, analiza el mensaje. Validando que el DNI tenga 7-8 números y el correo contenga \"@\" y un dominio. Si hay errores, no muestres los turnos, mantén la posición exigiendo los datos del turno pre-seleccionado.\n\n- PASO 4 (Doble Verificación y Reserva - ORDEN ESTRICTO): SOLO cuando los datos del Paso 3 sean correctos, debes ejecutar obligatoriamente estas herramientas en este orden exacto:\n  \n  1. Llama a `consultar_turnos`: Analiza minuciosamente el contenido de `turnos_json` devuelto.\n     - Busca el día y horario elegido por el usuario (ej: \"Jueves 2 de julio\" y \"1:00 PM\") dentro del JSON que te devolvió Supabase.\n     - SI EL HORARIO YA NO FIGURA EN EL JSON: Significa que se ocupó de verdad. SOLO en este caso detén la reserva y dile: \"¡Uh, qué lástima! Alguien acaba de reservar el turno para el [Día] a las [Hora] hace unos instantes...\" y lístale las opciones restantes.\n     - SI EL HORARIO SÍ EXISTE Y ESTÁ VISIBLE EN EL JSON: Procede de inmediato a llamar a la herramienta `crear_evento_calendario` utilizando el String ISO 8601 con offset en 'Start' (Ej: \"2026-07-02T13:00:00-03:00\"). En el título coloca: \"Turno: [Nombre] - DNI [Número]\". *(Nota: No envíes el parámetro 'End', el sistema lo calcula a una hora automáticamente)*.\n\n  2. Llama a `actualizar_disponibilidad_supabase`: Llama a esta herramienta inmediatamente después del éxito en Google Calendar. Pásale obligatoriamente los parámetros 'dia' y 'hora' del turno para sincronizar el sistema hacia Supabase. ADEMÁS, es obligatorio que extraigas y envíes los datos del paciente en los parámetros de entrada de la herramienta: 'email_paciente', 'nombre_paciente' y 'detalles_turno' (Ej: \"Viernes 3 de julio a las 2:00 PM\").\n\n- PASO 5 (Confirmación Final): Una vez completado el PASO 4 con éxito en el calendario, confirma al usuario que su turno ahora SÍ ha sido reservado de forma definitiva y resume los detalles de su cita.\n\n# FLUJO DE CANCELACIÓN (PASOS OBLIGATORIOS)\n- PASO C1 (Solicitud de DNI): Si el usuario manifiesta que desea cancelar una cita, pídele de manera amable que te indique su número de documento (DNI). No llames a ninguna herramienta todavía.\n\n- PASO C2 (Búsqueda y Pregunta de Confirmación): En cuanto el usuario te provea su DNI, ejecuta de inmediato la herramienta `buscar_mis_turnos_activos` pasando el número de documento en el parámetro 'DNI_Paciente'.\n  - Si la herramienta devuelve una lista vacía, responde: \"No encontré ningún turno activo agendado con el DNI [Número de DNI]. Por favor, verifica si el número es correcto.\"\n  - Si la herramienta encuentra un turno, lee su título y horario. Extrae el 'id' (Event_ID) internamente. Respóndele al usuario: \"Encontré tu turno para el [Fecha] a las [Hora]. ¿Confirmas que deseas cancelar esta cita?\"\n  \n- PASO C3 (Sincronización Post-Baja): Inmediatamente después de que `borrar_evento` devuelva éxito, llama a la herramienta `actualizar_disponibilidad_supabase` enviando obligatoriamente:\n  - 'accion': \"cancelacion\"\n  - 'email_paciente': El correo asociado a este usuario en el historial.\n  - 'nombre_paciente': El nombre completo del usuario.\n  - 'detalles_turno': El día y horario del turno que se acaba de eliminar para la notificación.\n\n- PASO C4 (Cierre): Informa al usuario de manera atenta que su cita ha sido removida del sistema de la clínica con éxito y que se le ha despachado el comprobante HTML de la cancelación a su correo electrónico."
+          "systemMessage": "# ROL\nEres el recepcionista virtual de una clínica médica en Telegram. Tu objetivo es guiar al usuario para consultar turnos, validar su selección, recolectar sus datos personales (DNI, Apellido y Nombre, y Correo) y, una vez todo sea válido, confirmar la reserva en Google Calendar y sincronizar el sistema.\n\n# REGLAS CRÍTICAS DE OPERACIÓN\n1. CONSULTA OBLIGATORIA: Siempre que el usuario salude o pida ver los turnos, debes llamar a la herramienta `consultar_turnos_en_db`. Prohibido inventar horarios.\n2. INTERRUPCIÓN DEL USUARIO (CAMBIO DE TURNO): En cualquier momento del flujo, si el usuario dice algo como \"quiero cambiar de horario\", \"otro turno\", \"me equivoqué de hora\" o menciona un nuevo día/horario, debes cancelar la recolección actual, borrar mentalmente los datos viejos y procesar el nuevo turno (o volver a listar los turnos de Supabase si no especificó cuál).\n3. CONTROL DE SELECCIÓN INICIAL (EL BUCLE): Si el usuario no ha elegido ningún turno válido y envía texto irrelevante, responde indicando que seleccione uno de la lista y muéstrasela.\n\n# FLUJO DE TRABAJO (PASOS OBLIGATORIOS)\n\n- PASO 1 (Consulta y Formato): Al leer `turnos_json`, muéstralos con este formato:\n  ¡Hola! 👋 Bienvenido a nuestro sistema de turnos médicos. Aquí tienes los horarios disponibles:\n  📅 *[Nombre del Día]*\n  🔹 [Hora 1] | [Hora 2] | [Hora 3]\n  Por favor, dime qué día y horario prefieres para proceder con tu reserva.\n\n- PASO 2 (Fase de Datos - SOLICITUD COMPLETA EN UN MENSAJE): Una vez que el usuario elija un turno VÁLIDO, debes responderle en un único e idéntico mensaje aclarando que el turno NO está reservado todavía y solicitando todos los datos juntos:\n  \"Perfecto, has seleccionado el turno para el [Día] a las [Hora]. ⚠️ TEN EN CUENTA: Tu turno AÚN NO HA SIDO RESERVADO. \n\n  Para completar la reserva de manera exitosa, por favor envíame en tu próximo mensaje los siguientes 3 datos:\n  1. Número de documento (DNI)\n  2. Apellido y Nombre completo\n  3. Correo electrónico\n\n  *(Nota: Si te equivocas o quieres elegir otro horario, puedes escribir 'cambiar turno' en cualquier momento)*\"\n\n- PASO 3 (Validación Estricta de Datos Recibidos): Cuando el usuario responda a la solicitud del Paso 2, analiza el mensaje. Validando que el DNI tenga 7-8 números y el correo contenga \"@\" y un dominio. Si hay errores, no muestres los turnos, mantén la posición exigiendo los datos del turno pre-seleccionado.\n\n- PASO 4 (Doble Verificación y Reserva - ORDEN ESTRICTO): SOLO cuando los datos del Paso 3 sean correctos, debes ejecutar obligatoriamente estas herramientas en este orden exacto:\n  \n  1. Llama a `consultar_turnos`: Analiza minuciosamente el contenido de `turnos_json` devuelto.\n     - Busca el día y horario elegido por el usuario (ej: \"Jueves 2 de julio\" y \"1:00 PM\") dentro del JSON que te devolvió Supabase.\n     - SI EL HORARIO YA NO FIGURA EN EL JSON: Significa que se ocupó de verdad. SOLO en este caso detén la reserva y dile: \"¡Uh, qué lástima! Alguien acaba de reservar el turno para el [Día] a las [Hora] hace unos instantes...\" y lístale las opciones restantes.\n     - SI EL HORARIO SÍ EXISTE Y ESTÁ VISIBLE EN EL JSON: Procede de inmediato a llamar a la herramienta `crear_evento_calendario` utilizando el String ISO 8601 con offset en 'Start' (Ej: \"2026-07-02T13:00:00-03:00\"). En el título coloca: \"Turno: [Nombre] - DNI [Número]\". *(Nota: No envíes el parámetro 'End', el sistema lo calcula a una hora automáticamente)*.\n\n  2. Llama a `actualizar_disponibilidad_supabase`: Llama a esta herramienta inmediatamente después del éxito en Google Calendar. Pásale obligatoriamente los parámetros 'dia' y 'hora' del turno para sincronizar el sistema hacia Supabase. ADEMÁS, es obligatorio que extraigas y envíes los datos del paciente en los parámetros de entrada de la herramienta: 'email_paciente', 'nombre_paciente', 'detalles_turno' (Ej: \"Viernes 3 de julio a las 2:00 PM\") y en el parámetro 'accion' envía el string \"cancelacion\"\n\n- PASO 5 (Confirmación Final): Una vez completado el PASO 4 con éxito en el calendario, confirma al usuario que su turno ahora SÍ ha sido reservado de forma definitiva y resume los detalles de su cita.\n\n# FLUJO DE CANCELACIÓN (PASOS OBLIGATORIOS)\n- PASO C1 (Solicitud de DNI): Si el usuario manifiesta que desea cancelar una cita, pídele de manera amable que te indique su número de documento (DNI). No llames a ninguna herramienta todavía.\n\n- PASO C2 (Búsqueda y Pregunta de Confirmación): En cuanto el usuario te provea su DNI, ejecuta de inmediato la herramienta `buscar_mis_turnos_activos` pasando el número de documento en el parámetro 'DNI_Paciente'.\n  - Si la herramienta devuelve una lista vacía, responde: \"No encontré ningún turno activo agendado con el DNI [Número de DNI]. Por favor, verifica si el número es correcto.\"\n  - Si la herramienta encuentra un turno, lee su título y horario. Extrae el 'id' (Event_ID) internamente. Respóndele al usuario: \"Encontré tu turno para el [Fecha] a las [Hora]. ¿Confirmas que deseas cancelar esta cita?\"\n  \n- PASO C3 (Sincronización Post-Baja): Inmediatamente después de que `borrar_evento` devuelva éxito, llama a la herramienta `actualizar_disponibilidad_supabase` enviando obligatoriamente:\n  - 'accion': Envia el string \"cancelacion\"\n  - 'email_paciente': El correo asociado a este usuario en el historial.\n  - 'nombre_paciente': El nombre completo del usuario.\n  - 'detalles_turno': El día y horario del turno que se acaba de eliminar para la notificación.\n\n- PASO C4 (Cierre): Informa al usuario de manera atenta que su cita ha sido removida del sistema de la clínica con éxito y que se le ha despachado el comprobante HTML de la cancelación a su correo electrónico."
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        160,
+        512,
         0
       ],
-      "id": "e37c27fc-a46a-4e83-8f17-300dc9aec1f7",
+      "id": "ccfec70a-243f-4e58-947d-53edd54b4287",
       "name": "AI Agent"
     },
     {
       "parameters": {
         "model": {
           "__rl": true,
-          "value": "gpt-4.1",
+          "value": "gpt-4.1-mini",
           "mode": "list",
-          "cachedResultName": "gpt-4.1"
+          "cachedResultName": "gpt-4.1-mini"
         },
         "builtInTools": {},
         "options": {}
@@ -55,15 +55,15 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
-        -160,
+        192,
         224
       ],
-      "id": "1036566e-d252-45e1-86a8-9b6cbb5e99a5",
+      "id": "5fc6a8ae-2688-4bc0-be2d-5c9e8d5ee94d",
       "name": "OpenAI Chat Model",
       "credentials": {
         "openAiApi": {
-          "id": "yWu5Dns1CudRZ5A6",
-          "name": "OpenAI account"
+          "id": "gMwrUSHaxbgsQvaR",
+          "name": "n8n free OpenAI API credits"
         }
       }
     },
@@ -78,15 +78,15 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        880,
+        1232,
         0
       ],
-      "id": "b327ff1a-459f-411b-afb8-131f2e140c31",
+      "id": "6a8d3c1b-011d-4f06-b636-543e30b5b9c0",
       "name": "Send a text message",
       "webhookId": "fc06be3a-1c3b-4c00-8f85-3902db24237f",
       "credentials": {
         "telegramApi": {
-          "id": "VfhJK7irauwRGhtT",
+          "id": "j2GZmSANe89q05cO",
           "name": "Telegram account"
         }
       }
@@ -100,10 +100,10 @@
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.4,
       "position": [
-        -16,
+        336,
         224
       ],
-      "id": "6d281876-b934-4bee-99bd-24aed7880b64",
+      "id": "f0c1be3f-0cb8-43f1-97b0-8d694b563207",
       "name": "Simple Memory"
     },
     {
@@ -123,14 +123,14 @@
       "type": "n8n-nodes-base.googleCalendarTool",
       "typeVersion": 1.3,
       "position": [
-        432,
-        224
+        784,
+        240
       ],
-      "id": "56935f35-7548-4fa2-9e6f-d30b0094f2cc",
+      "id": "4c53adaf-95c0-470b-a7ef-05c0c9fe1912",
       "name": "crear_evento_calendario",
       "credentials": {
         "googleCalendarOAuth2Api": {
-          "id": "Q0GgoL9mJNjp31gY",
+          "id": "6jlP3HGXDTKYfkAo",
           "name": "Google Calendar OAuth2 API"
         }
       }
@@ -142,10 +142,10 @@
       "type": "n8n-nodes-base.dateTimeTool",
       "typeVersion": 2,
       "position": [
-        288,
+        640,
         224
       ],
-      "id": "21a3dda1-b035-4d06-a463-6087419cd729",
+      "id": "c45e5685-ebea-48fb-a373-bc60e60e6828",
       "name": "Date & Time"
     },
     {
@@ -166,14 +166,14 @@
       "type": "n8n-nodes-base.supabaseTool",
       "typeVersion": 1,
       "position": [
-        768,
-        240
+        1184,
+        224
       ],
-      "id": "1bd5421f-dff7-4e1e-8c0a-ea97b5809887",
+      "id": "dd6a72d3-75da-4ece-829a-6f9936b853cb",
       "name": "consultar_turnos",
       "credentials": {
         "supabaseApi": {
-          "id": "UHUCfWlbHRh03FgN",
+          "id": "vCz3nzUl7sRjhBUq",
           "name": "Supabase account"
         }
       }
@@ -183,18 +183,18 @@
         "description": "OBLIGATORIO: Llama a esta herramienta de manera mandatoria e inmediata cada vez que 'crear_evento_calendario' devuelva un resultado exitoso. Si no ejecutas esta herramienta, la reserva quedará incompleta y fallará el sistema.",
         "workflowId": {
           "__rl": true,
-          "value": "Z8Ntwvp8RAilTbLR",
+          "value": "crL4sZXfxjOo1CTk",
           "mode": "list",
-          "cachedResultUrl": "/workflow/Z8Ntwvp8RAilTbLR",
+          "cachedResultUrl": "/workflow/crL4sZXfxjOo1CTk",
           "cachedResultName": "subworkflow-db-sync"
         },
         "workflowInputs": {
           "mappingMode": "defineBelow",
           "value": {
             "email_paciente": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('email_paciente', ``, 'string') }}",
-            "nombre_paciente": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('nombre_paciente', ``, 'string') }}",
             "detalles_turno": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('detalles_turno', ``, 'string') }}",
-            "cancelar": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('cancelar', `Devolver true solo si el usuario confirmo la cancelación de su turno.`, 'number') }}"
+            "nombre_paciente": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('nombre_paciente', ``, 'string') }}",
+            "accion": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('accion', `Pasa obligatoriamente el texto \"cancelacion\" si el usuario confirmó dar de baja su turno, o \"reserva\" si se está agendando un turno nuevo.`, 'string') }}"
           },
           "matchingColumns": [],
           "schema": [
@@ -229,13 +229,13 @@
               "removed": false
             },
             {
-              "id": "cancelar",
-              "displayName": "cancelar",
+              "id": "accion",
+              "displayName": "accion",
               "required": false,
               "defaultMatch": false,
               "display": true,
               "canBeUsedToMatch": true,
-              "type": "number",
+              "type": "string",
               "removed": false
             }
           ],
@@ -246,10 +246,10 @@
       "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
       "typeVersion": 2.2,
       "position": [
-        144,
+        496,
         224
       ],
-      "id": "0ca5a1e5-a766-4e1b-a25a-0851fa992d8c",
+      "id": "47084b24-5a8f-4179-8cd8-f6332e3d0a62",
       "name": "actualizar_disponibilidad_supabase"
     },
     {
@@ -270,14 +270,41 @@
       "type": "n8n-nodes-base.googleCalendarTool",
       "typeVersion": 1.3,
       "position": [
-        608,
-        224
+        928,
+        272
       ],
-      "id": "d4d0aa5c-3f38-4899-aab5-ee472ca27a4e",
+      "id": "898b6d8f-ffcd-4943-a347-d18d3a20a44d",
       "name": "buscar_mis_turnos_activos",
       "credentials": {
         "googleCalendarOAuth2Api": {
-          "id": "Q0GgoL9mJNjp31gY",
+          "id": "6jlP3HGXDTKYfkAo",
+          "name": "Google Calendar OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "calendar": {
+          "__rl": true,
+          "value": "eefacde0d1a8d4436c0e6e2915fda833d69a50cd114318ad47c2beee4bbd4270@group.calendar.google.com",
+          "mode": "list",
+          "cachedResultName": "GPN"
+        },
+        "eventId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Event_ID', `El ID del evento (Event_ID) que encontraste en la búsqueda anterior y que deseas eliminar`, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        1056,
+        240
+      ],
+      "id": "1ad419df-7454-4c22-adf3-569342189e1d",
+      "name": "borrar_evento",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "6jlP3HGXDTKYfkAo",
           "name": "Google Calendar OAuth2 API"
         }
       }
@@ -383,20 +410,31 @@
           }
         ]
       ]
+    },
+    "borrar_evento": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "4d311b10-45cf-46f4-be53-03b953d1bc05",
+  "versionId": "95691694-cb4a-445d-bbff-d77acec4e34f",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "9c22d813620af0e278cd7fb069c4aa26787e6b5829bbd995ad1b658d43fe75f3"
+    "instanceId": "e684b3a573a882f7f2fc4c5ef451da6be956134ae1768a06ca72b65f7820e338"
   },
   "nodeGroups": [],
-  "id": "zPs2TVjWT6vnRdEB",
+  "id": "ZEuKS086bQW2x0ik",
   "tags": []
 }

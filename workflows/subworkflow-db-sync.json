@@ -15,8 +15,7 @@
               "name": "detalles_turno"
             },
             {
-              "name": "cancelar",
-              "type": "boolean"
+              "name": "accion"
             }
           ]
         }
@@ -24,10 +23,10 @@
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.2,
       "position": [
-        -848,
-        -192
+        -1184,
+        96
       ],
-      "id": "8b2c7724-868d-4fe8-a51c-6c69e3195898",
+      "id": "af1da993-a9f8-4b59-a152-1a4082d61635",
       "name": "When Executed by Another Workflow"
     },
     {
@@ -44,14 +43,14 @@
       "type": "n8n-nodes-base.googleCalendar",
       "typeVersion": 1.3,
       "position": [
-        -576,
-        -192
+        -912,
+        96
       ],
-      "id": "dd87b170-225d-4fd7-aeea-9a57175f3dfa",
+      "id": "7627e07f-aca2-489d-9e6e-9d61568210f8",
       "name": "Get many events",
       "credentials": {
         "googleCalendarOAuth2Api": {
-          "id": "Q0GgoL9mJNjp31gY",
+          "id": "6jlP3HGXDTKYfkAo",
           "name": "Google Calendar OAuth2 API"
         }
       }
@@ -63,10 +62,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -368,
-        -192
+        -704,
+        96
       ],
-      "id": "ba65a079-3807-4359-a25e-60945577a696",
+      "id": "29d58d32-b09b-4971-bb4f-9a927d5a04fa",
       "name": "Code in JavaScript"
     },
     {
@@ -95,14 +94,14 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        -176,
-        -192
+        -512,
+        96
       ],
-      "id": "56e8b84e-0554-4667-8955-d5a2197c31b1",
+      "id": "03310fad-3761-4a3c-a59d-5d040066706e",
       "name": "Update a row",
       "credentials": {
         "supabaseApi": {
-          "id": "UHUCfWlbHRh03FgN",
+          "id": "vCz3nzUl7sRjhBUq",
           "name": "Supabase account"
         }
       }
@@ -119,12 +118,11 @@
           "conditions": [
             {
               "id": "e0d46d48-11cd-4b42-a90a-1e61231e0b13",
-              "leftValue": "={{ $json.cancelar }}",
-              "rightValue": "",
+              "leftValue": "={{ $('When Executed by Another Workflow').item.json.accion }}",
+              "rightValue": "cancelacion",
               "operator": {
-                "type": "boolean",
-                "operation": "true",
-                "singleValue": true
+                "type": "string",
+                "operation": "equals"
               }
             }
           ],
@@ -137,10 +135,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        48,
-        -192
+        -288,
+        96
       ],
-      "id": "d1d7ba37-fc74-4780-abb9-b350a4b41f64",
+      "id": "0f155405-cd70-40bd-b6cd-eff3f4c19e70",
       "name": "If"
     },
     {
@@ -153,15 +151,15 @@
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.2,
       "position": [
-        336,
-        -112
+        0,
+        176
       ],
-      "id": "6f5e40b8-99a3-4c25-8483-d25d61165e41",
+      "id": "78d50c87-85aa-49c9-a0f3-2f77e60b61fd",
       "name": "enviar_mensaje_confirmacion",
       "webhookId": "4b9f5fe8-6b35-456d-b56d-ae5eb840b35a",
       "credentials": {
         "gmailOAuth2": {
-          "id": "fhAaJAF5hhTU5INZ",
+          "id": "mPJN5cpV1nlW8iKV",
           "name": "Gmail OAuth2 API"
         }
       }
@@ -170,21 +168,21 @@
       "parameters": {
         "sendTo": "={{ $('When Executed by Another Workflow').item.json.email_paciente }}",
         "subject": "Cancelación de Turno Médico Confirmada 🗓️",
-        "message": "=<!DOCTYPE html> <html> <head>   <meta charset=\"utf-8\">   <style>     body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f7f6; color: #333333; margin: 0; padding: 0; }     .container { max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }     .header { background: linear-gradient(135deg, #e11d48, #be123c); padding: 40px 20px; text-align: center; color: #ffffff; }     .header h1 { margin: 0; font-size: 26px; font-weight: 600; letter-spacing: 0.5px; }     .content { padding: 40px 30px; line-height: 1.6; }     .content p { font-size: 16px; color: #555555; margin-bottom: 25px; }     .card { background-color: #fff1f2; border-left: 4px solid #e11d48; padding: 20px; border-radius: 4px; margin-bottom: 30px; }     .card-title { font-weight: bold; color: #be123c; margin-bottom: 10px; font-size: 15px; text-transform: uppercase; }     .card-item { margin: 5px 0; font-size: 15px; }     .footer { background-color: #f4f7f6; text-align: center; padding: 20px; font-size: 12px; color: #888888; border-top: 1px solid #eef2f5; }   </style> </head> <body>   <div class=\"container\">     <div class=\"header\">       <h1>Turno Cancelado Exitosamente</h1>     </div>     <div class=\"content\">       <p>Hola <strong>{{ $('When Executed by Another Workflow').item.json.nombre_paciente }}</strong>,</p>       <p>Te confirmamos que, de acuerdo a tu solicitud, hemos procedido a liberar el espacio de tu cita médica. Los detalles del turno liberado eran los siguientes:</p>              <div class=\"card\">         <div class=\"card-title\">Detalles de la Cita Cancelada</div>         <div class=\"card-item\"><strong>Paciente:</strong> {{ $('When Executed by Another Workflow').item.json.nombre_paciente }}</div>         <div class=\"card-item\"><strong>Cita Liberada:</strong> {{ $('When Executed by Another Workflow').item.json.detalles_turno }}</div>       </div>              <p>El horario ya se encuentra disponible nuevamente en nuestro sistema. Si deseas volver a agendar en el futuro, puedes iniciar una nueva conversación con nuestro bot en cualquier momento.</p>       <p>¡Gracias por avisarnos!</p>     </div>     <div class=\"footer\">       Este es un mensaje automático enviado por nuestro Sistema de Gestión Clínica. Por favor no respondas directamente a esta dirección.     </div>   </div> </body> </html>",
+        "message": "=<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"utf-8\">\n  <style>\n    body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f7f6; color: #333333; margin: 0; padding: 0; }\n    .container { max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }\n    .header { background: linear-gradient(135deg, #e11d48, #be123c); padding: 40px 20px; text-align: center; color: #ffffff; }\n    .header h1 { margin: 0; font-size: 26px; font-weight: 600; letter-spacing: 0.5px; }\n    .content { padding: 40px 30px; line-height: 1.6; }\n    .content p { font-size: 16px; color: #555555; margin-bottom: 25px; }\n    .card { background-color: #fff1f2; border-left: 4px solid #e11d48; padding: 20px; border-radius: 4px; margin-bottom: 30px; }\n    .card-title { font-weight: bold; color: #be123c; margin-bottom: 10px; font-size: 15px; text-transform: uppercase; }\n    .card-item { margin: 5px 0; font-size: 15px; }\n    .footer { background-color: #f4f7f6; text-align: center; padding: 20px; font-size: 12px; color: #888888; border-top: 1px solid #eef2f5; }\n  </style>\n</head>\n<body>\n  <div class=\"container\">\n    <div class=\"header\">\n      <h1>Turno Cancelado Exitosamente</h1>\n    </div>\n    <div class=\"content\">\n      <p>Hola <strong>{{ $('When Executed by Another Workflow').item.json.nombre_paciente }}</strong>,</p>\n      <p>Te confirmamos que, de acuerdo a tu solicitud, hemos procedido a liberar el espacio de tu cita médica. Los detalles del turno liberado eran los siguientes:</p>\n      \n      <div class=\"card\">\n        <div class=\"card-title\">Detalles de la Cita Cancelada</div>\n        <div class=\"card-item\"><strong>Paciente:</strong> {{ $('When Executed by Another Workflow').item.json.nombre_paciente }}</div>\n        <div class=\"card-item\"><strong>Cita Liberada:</strong> {{ $('When Executed by Another Workflow').item.json.detalles_turno }}</div>\n      </div>\n      \n      <p>El horario ya se encuentra disponible nuevamente en nuestro sistema. Si deseas volver a agendar en el futuro, puedes iniciar una nueva conversación con nuestro bot.</p>\n    </div>\n    <div class=\"footer\">\n      Este es un mensaje automático enviado por nuestro Sistema de Gestión Clínica.\n    </div>\n  </div>\n</body>\n</html>",
         "options": {}
       },
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.2,
       "position": [
-        336,
-        -288
+        0,
+        0
       ],
-      "id": "b2e30c03-8d6e-475e-adaf-b54e72223df8",
+      "id": "65aa5b66-df12-4631-9cb0-17d602b2cf0b",
       "name": "Send a message",
       "webhookId": "9b18c141-62b3-4b51-b0b9-2bebd6966232",
       "credentials": {
         "gmailOAuth2": {
-          "id": "fhAaJAF5hhTU5INZ",
+          "id": "mPJN5cpV1nlW8iKV",
           "name": "Gmail OAuth2 API"
         }
       }
@@ -255,18 +253,17 @@
       ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1",
-    "binaryMode": "separate",
-    "availableInMCP": false
+    "binaryMode": "separate"
   },
-  "versionId": "6f9592d6-61c2-4c25-9d99-f9e7e502567b",
+  "versionId": "744eb768-07d1-492d-a1aa-6d0ab49c4f14",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "9c22d813620af0e278cd7fb069c4aa26787e6b5829bbd995ad1b658d43fe75f3"
+    "instanceId": "e684b3a573a882f7f2fc4c5ef451da6be956134ae1768a06ca72b65f7820e338"
   },
   "nodeGroups": [],
-  "id": "Z8Ntwvp8RAilTbLR",
+  "id": "crL4sZXfxjOo1CTk",
   "tags": []
 }
